@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="국가별 문화 실사 이미지를 수집하고 정제합니다.">
+  <title>문화 실사 이미지 수집</title>
+  <link rel="stylesheet" href="./styles.css?v=v32_split_deploy_20260723_200000">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">AI TRAINING DATA COLLECTOR</p>
+      <h1 id="page-title">문화 실사 이미지 수집</h1>
+      <p class="subtitle">필수 항목만 입력하면 조건에 맞는 실사 이미지를 수집하고 중복을 정리합니다.</p>
+      <p class="app-version">버전 v32_split_deploy_20260723_200000</p>
+    </section>
+
+    <section class="panel form-panel">
+      <div id="provider-status" class="provider-status" aria-live="polite">
+        <div>
+          <p class="section-kicker">SEARCH PROVIDERS</p>
+          <h2>검색 제공처 확인 중</h2>
+        </div>
+        <strong id="provider-status-count">0 / 6 활성</strong>
+        <p id="provider-status-enabled">백엔드 연결 후 활성 제공처가 표시됩니다.</p>
+        <p id="provider-status-disabled" class="provider-status-disabled" hidden></p>
+      </div>
+      <form id="collection-form" novalidate>
+        <div class="field-row">
+          <label for="country">국가 <span aria-hidden="true">*</span></label>
+          <div class="field-control">
+            <select id="country" name="country" required>
+              <option value="">국가를 선택하세요</option>
+              <option value="미국">미국</option>
+              <option value="일본">일본</option>
+              <option value="스페인">스페인</option>
+              <option value="인도네시아">인도네시아</option>
+              <option value="프랑스">프랑스</option>
+            </select>
+            <p class="help">미국, 일본, 스페인, 인도네시아, 프랑스 중 선택</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label for="keyword">문화 키워드 <span aria-hidden="true">*</span></label>
+          <div class="field-control">
+            <input id="keyword" name="keyword" type="text" minlength="2" maxlength="80" placeholder="예: summer festival, traditional market" required>
+            <p class="help">원문·정확 복수형·해당 국가 현지어 직역만 검색합니다. fair·carnival처럼 의미가 넓어지는 치환은 사용하지 않습니다.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label for="count">목표 수집 수량 <span aria-hidden="true">*</span></label>
+          <div class="field-control quantity-control">
+            <input id="count" name="count" type="number" min="1" max="50" value="50" inputmode="numeric" required>
+            <span class="unit">장</span>
+            <p class="help">무료 프로토타입은 백엔드에서 1회 최대 50장으로 제한됩니다.</p>
+          </div>
+        </div>
+
+        <div class="field-row diagnostic-field-row">
+          <label for="openverse-diagnostic">Openverse 진단</label>
+          <div class="field-control">
+            <label class="checkbox-control" for="openverse-diagnostic">
+              <input id="openverse-diagnostic" name="openverseDiagnostic" type="checkbox">
+              <span>Openverse 사이트와 같은 넓은 원시 조건으로 조회</span>
+            </label>
+            <p class="help">라이선스·사진 유형을 API 요청에서 먼저 제한하지 않고 원시 결과를 비교합니다. 실제 저장은 기존과 동일하게 상업 이용 가능 라이선스·실사 조건을 통과해야 합니다.</p>
+          </div>
+        </div>
+
+        <p id="prototype-lock-message" class="prototype-lock-message" role="status" hidden></p>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <button id="submit-button" class="primary-button" type="submit">수집 시작</button>
+      </form>
+    </section>
+
+    <section id="job-panel" class="panel job-panel" hidden aria-live="polite">
+      <div class="status-header">
+        <div>
+          <p class="section-kicker">COLLECTION STATUS</p>
+          <h2 id="status-title">수집 준비 중</h2>
+        </div>
+        <span id="status-badge" class="status-badge queued">대기</span>
+      </div>
+
+      <p id="status-message" class="status-message">작업을 준비하고 있습니다.</p>
+      <p id="openverse-diagnostic-note" class="diagnostic-mode-note" hidden></p>
+      <p id="ownership-note" class="ownership-note" hidden></p>
+      <div class="runtime-panel" aria-label="실시간 작업 상태">
+        <p id="runtime-summary" class="runtime-summary">검색 제공처와 다운로드 워커 상태를 표시합니다.</p>
+        <div class="runtime-grid">
+          <article><span>검색 완료</span><strong id="runtime-search">0 / 0</strong></article>
+          <article><span>활성 워커</span><strong id="runtime-workers">0</strong></article>
+          <article><span>대기 큐</span><strong id="runtime-queue">0</strong></article>
+          <article><span>최근 저장</span><strong id="runtime-last-accepted">-</strong></article>
+          <article><span>메모리 사용</span><strong id="runtime-memory">0 MB</strong></article>
+          <article><span>후보 처리 속도</span><strong id="runtime-processed-rate">0 /분</strong></article>
+          <article><span>이미지 저장 속도</span><strong id="runtime-collected-rate">0 /분</strong></article>
+          <article><span>차단 호스트</span><strong id="runtime-host-cooldowns">0</strong></article>
+        </div>
+        <p id="runtime-last-event" class="runtime-note">최근 상태: -</p>
+        <p id="runtime-last-error" class="runtime-note runtime-error" hidden>최근 오류: -</p>
+        <div class="diagnostic-grid">
+          <article><span>최근 이미지 추가 간격</span><strong id="diag-last-gap">-</strong></article>
+          <article><span>평균 추가 간격</span><strong id="diag-average-gap">-</strong></article>
+          <article><span>최장 추가 간격</span><strong id="diag-max-gap">-</strong></article>
+          <article><span>최근 성공 전 실제 오류</span><strong id="diag-failures-since-last">0</strong></article>
+          <article><span>최근 성공 전 제공처 오류</span><strong id="diag-provider-errors-since-last">0</strong></article>
+          <article><span>최근 성공 전 저장 오류</span><strong id="diag-download-failures-since-last">0</strong></article>
+          <article><span>최근 성공 전 속도조절</span><strong id="diag-rate-limited-since-last">0</strong></article>
+          <article><span>최근 성공 전 필터 탈락</span><strong id="diag-rejected-since-last">0</strong></article>
+          <article><span>최근 성공 전 중복 제외</span><strong id="diag-duplicates-since-last">0</strong></article>
+        </div>
+        <div class="diagnostic-actions" aria-label="진단 로그 작업">
+          <button id="copy-diagnostics-button" class="secondary-button compact" type="button" disabled>진단 로그 복사</button>
+          <a id="download-diagnostics-button" class="secondary-button compact disabled-link" href="#" aria-disabled="true" download>진단 로그 다운로드</a>
+          <a id="download-audit-button" class="secondary-button compact disabled-link" href="#" aria-disabled="true" download>후보 판정 로그 다운로드 (경량)</a>
+        </div>
+      </div>
+      <div class="progress-track" aria-label="수집 진행률">
+        <div id="progress-bar" class="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-copy">
+        <strong id="progress-number">0 / 0장</strong>
+        <span id="progress-percent">0%</span>
+      </div>
+
+      <div class="metrics" aria-label="작업 통계">
+        <article><span>투입 후보</span><strong id="metric-candidates">0</strong></article>
+        <article><span>메타 판정 완료</span><strong id="metric-processed">0</strong></article>
+        <article><span>수집 완료</span><strong id="metric-collected">0</strong></article>
+        <article><span>AI·비실사 제외</span><strong id="metric-filtered">0</strong></article>
+        <article><span>국가 부적합</span><strong id="metric-country">0</strong></article>
+        <article><span>키워드 부적합</span><strong id="metric-relevance">0</strong></article>
+        <article><span>크기·권리 제외</span><strong id="metric-policy">0</strong></article>
+        <article><span>중복 제외</span><strong id="metric-duplicates">0</strong></article>
+        <article><span>동일 문서·행사 제외</span><strong id="metric-series-duplicates">0</strong></article>
+        <article><span>속도조절 대기</span><strong id="metric-rate-limited">0</strong></article>
+        <article><span>원본 접근 불가</span><strong id="metric-unavailable">0</strong></article>
+        <article><span>제공처 오류</span><strong id="metric-provider-errors">0</strong></article>
+        <article><span>로컬 저장 오류</span><strong id="metric-download-errors">0</strong></article>
+      </div>
+
+      <section id="provider-result-panel" class="provider-result-panel" hidden aria-live="polite">
+        <div class="provider-result-heading">
+          <div>
+            <p class="section-kicker">SOURCE RESULT</p>
+            <h3 id="provider-result-title">제공처별 수집 결과</h3>
+          </div>
+          <strong id="provider-result-total">총 0장</strong>
+        </div>
+        <div id="provider-result-list" class="provider-result-list"></div>
+      </section>
+
+      <div class="job-actions">
+        <button id="cancel-button" class="secondary-button" type="button">작업 일시중지</button>
+        <button id="resume-button" class="primary-button compact" type="button" hidden>이어서 수집</button>
+        <a id="download-button" class="primary-button compact" href="#" hidden>결과 ZIP 다운로드</a>
+      </div>
+    </section>
+
+    <section id="preview-section" class="preview-section" hidden>
+      <div class="preview-heading">
+        <div>
+          <p class="section-kicker">PREVIEW</p>
+          <h2>수집 이미지 미리보기</h2>
+        </div>
+        <p>최대 24장 표시</p>
+      </div>
+      <div id="preview-grid" class="preview-grid"></div>
+    </section>
+
+    <p class="notice">핵심 키워드는 제목·설명·구조화 태그와 Openverse 매칭 필드를 함께 확인합니다. 상업 이용과 수정이 가능한 공개 라이선스만 허용하며 최종 투입 전 사람의 검수를 권장합니다.</p>
+  </main>
+  <script src="./config.js?v=v32_split_deploy_20260723_200000"></script>
+  <script src="./app.js?v=v32_split_deploy_20260723_200000" defer></script>
+</body>
+</html>
