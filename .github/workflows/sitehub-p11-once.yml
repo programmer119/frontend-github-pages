@@ -1,4 +1,4 @@
-name: Integrate SiteHub p11 once
+name: Complete SiteHub SearchOps p11 once
 on:
   push:
     branches: [main]
@@ -10,16 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch initial head
+      - name: Complete SearchOps contract in exact Pages root
         run: |
+          set -Eeuo pipefail
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html'); h=p.read_text(encoding='utf-8')
-          if 'data-sitehub-project="p11"' in h: raise SystemExit(0)
-          block='''\n<link rel="canonical" href="https://imgfind.suaveforge.com/">\n<meta property="og:title" content="문화 실사 이미지 수집">\n<meta property="og:description" content="국가별 문화 실사 이미지를 수집하고 정제합니다.">\n<meta property="og:image" content="https://sitehub.suaveforge.com/assets/namecard-default.png">\n<meta property="og:url" content="https://imgfind.suaveforge.com/">\n<meta property="og:site_name" content="SuaveForge">\n<meta name="twitter:card" content="summary_large_image">\n<script async src="https://sitehub.suaveforge.com/analytics-loader.js" data-sitehub-project="p11"></script>\n'''
-          h=h.replace('</head>',block+'</head>',1); p.write_text(h,encoding='utf-8')
+          marker='SITEHUB-SEARCHOPS-P11'
+          if marker not in h:
+              schema='''\n<!-- SITEHUB-SEARCHOPS-P11 -->\n<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"SuaveForge","url":"https://suaveforge.com/"},{"@type":"WebApplication","name":"IMGFIND 문화 실사 이미지 수집","url":"https://imgfind.suaveforge.com/","description":"국가별 문화 실사 이미지를 검색·수집·정제하는 SuaveForge 서비스","publisher":{"@type":"Organization","name":"SuaveForge","url":"https://suaveforge.com/"}}]}</script>\n'''
+              h=h.replace('</head>',schema+'</head>',1)
+              support='''\n<section class="notice" aria-label="서비스 운영 안내">\n  <h2>IMGFIND 서비스 안내</h2>\n  <p>IMGFIND는 SuaveForge가 운영하는 문화 실사 이미지 수집·정제 서비스입니다. 국가와 문화 키워드를 기준으로 공개 이미지 후보를 모으고, 중복과 정책 부적합 결과를 정리해 검수 가능한 형태로 제공합니다.</p>\n  <p>사용 방법과 오류 지원은 이 서비스의 상태 안내와 SuaveForge 운영 채널을 통해 확인할 수 있습니다.</p>\n</section>\n'''
+              h=h.replace('</main>',support+'</main>',1)
+              p.write_text(h,encoding='utf-8')
+          Path('robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: https://imgfind.suaveforge.com/sitemap.xml\n',encoding='utf-8')
+          Path('sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://imgfind.suaveforge.com/</loc></url></urlset>\n',encoding='utf-8')
           PY
+          grep -q 'SITEHUB-SEARCHOPS-P11' index.html
+          grep -q 'SuaveForge가 운영하는' index.html
+          grep -q 'application/ld+json' index.html
+          grep -q 'Sitemap: https://imgfind.suaveforge.com/sitemap.xml' robots.txt
+          grep -q '<loc>https://imgfind.suaveforge.com/</loc>' sitemap.xml
           git config user.name 'SuaveForge SiteHub'
           git config user.email '53187583+programmer119@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet || (git commit -m 'Integrate SiteHub p11' && git push)
+          git add index.html robots.txt sitemap.xml
+          git diff --cached --quiet || (git commit -m 'Complete SiteHub SearchOps p11' && git push)
