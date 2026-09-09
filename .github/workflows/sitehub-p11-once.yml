@@ -1,0 +1,25 @@
+name: Integrate SiteHub p11 once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/sitehub-p11-once.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch initial head
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); h=p.read_text(encoding='utf-8')
+          if 'data-sitehub-project="p11"' in h: raise SystemExit(0)
+          block='''\n<link rel="canonical" href="https://imgfind.suaveforge.com/">\n<meta property="og:title" content="문화 실사 이미지 수집">\n<meta property="og:description" content="국가별 문화 실사 이미지를 수집하고 정제합니다.">\n<meta property="og:image" content="https://sitehub.suaveforge.com/assets/namecard-default.png">\n<meta property="og:url" content="https://imgfind.suaveforge.com/">\n<meta property="og:site_name" content="SuaveForge">\n<meta name="twitter:card" content="summary_large_image">\n<script async src="https://sitehub.suaveforge.com/analytics-loader.js" data-sitehub-project="p11"></script>\n'''
+          h=h.replace('</head>',block+'</head>',1); p.write_text(h,encoding='utf-8')
+          PY
+          git config user.name 'SuaveForge SiteHub'
+          git config user.email '53187583+programmer119@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || (git commit -m 'Integrate SiteHub p11' && git push)
