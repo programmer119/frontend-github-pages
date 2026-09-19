@@ -1,0 +1,21 @@
+name: Verify IndexNow key live once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/indexnow-key-live-verify-once.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify p11 and p38 public key files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          key='e9b867c6fab73098eae4241b481d7c01417a204125432fe964bf1011b65179ec'
+          for host in imgfind.suaveforge.com date.suaveforge.com; do
+            body=$(curl -fsSL --connect-timeout 5 --max-time 20 "https://$host/$key.txt")
+            test "$body" = "$key"
+            echo "$host INDEXNOW_KEY_LIVE=PASS"
+          done
